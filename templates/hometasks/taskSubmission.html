@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if request.user.student %}
+    <div class="content">
+    {% for el in homework %}
+        <div class="card col-5 d-flex">
+            <div class="card-header">
+                <h3>{{ el.teacher.position }}</h3>
+                <span class="d-block h5">
+                    {{ el.homework_text }}
+                </span>
+                <a href="/home/gayrat/Downloads/Gayrat's Resume (3) (1).pdf" download class="h5">Download the Task File</a>
+                <p class="h4 mt-2">Deadline: <time>{{ el.homework_deadline_time }}</time> </p>
+            </div>
+            <div class="card-body">
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+                Upload File
+                </button>
+
+                <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Upload File</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                                <div class="card">
+    
+                                    <div class="card-body" id="forms-target-left">
+                                        <div class="form-group">
+                                            <label class="cursor-move">Attach File:</label>
+                                            <input type="file" id="file" name="file" class="form-input-styled" data-fouc>
+                                        </div>
+    
+                                        <div class="form-group">
+                                            <label class="cursor-move">Your Commit:</label>
+                                            <textarea rows="5" cols="5" class="form-control" placeholder="Enter your message here"></textarea>
+                                        </div>
+    
+                                        <div class="text-right">
+                                            <button type="submit" id="submit" class="btn btn-primary">Submit File <i class="icon-paperplane ml-2"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    <script>
+        $('#submit').on('click', function(){
+            var file = $('#file').val
+            console.log(file)
+        });
+    </script>
+{% endif %}
+{% endblock content %}
+

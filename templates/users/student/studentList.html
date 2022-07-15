@@ -1,0 +1,67 @@
+{% extends '../../base.html' %}
+
+<!-- base -->
+{% block content %}
+{% if request.user.owner or request.user.teacher %}
+			<!-- Content area -->
+			<div class="content">
+
+				<!-- Basic datatable -->
+				<div class="card">
+					<div class="card-header header-elements-inline">
+						<h5 class="card-title">Student List</h5>
+						<div class="header-elements">
+							<div class="list-icons">
+		                		<a class="list-icons-item" data-action="collapse"></a>
+								<!-- Modal -->
+								{% block modal %}
+									{% include './modals/listModal.html' %}
+								{% endblock modal %}
+
+
+								
+		                	</div>
+	                	</div>
+					</div>
+					<table class="table datatable-basic">
+						<thead>
+							<tr>
+								<th>Select</th>
+								<th>Username</th>
+								<th>First Name</th>
+								<th>Last Name</th>
+								<th>Birthday</th>
+								<th>Email</th>
+								<th>Phone</th>
+								<th>Mark</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for el in student %}
+							{% for i in el.student.all %}
+							<tr>
+								<td><input type="checkbox" name="" id=""></td>
+								<td>{{ i.user.username }}</td>
+								<td>{{ i.user.first_name }}</td>
+								<td>{{ i.user.last_name}}</td>
+								<td>{{ i.user.birthday }}</td>
+								<td>{{ i.user.email }}</td>
+								<td>{{ i.user.phone }}</td>
+								<td>5</td>
+							</tr>
+							{% endfor %}
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				<!-- /basic datatable -->
+
+			</div>
+			<!-- /content area -->
+			{% block js %}
+				{% include './modals/listModal.js' %}
+			{% endblock js %}
+	{% endif %}
+{% endblock content %}
+<!-- /base -->
+			
