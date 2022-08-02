@@ -1,0 +1,61 @@
+{% extends '../../base.html' %}
+
+<!-- base -->
+{% block content %}
+{% if request.user.owner or request.user.teacher %}
+			<!-- Content area -->
+			<div class="content">
+
+				<!-- Basic datatable -->
+				<div class="card">
+					<div class="card-header header-elements-inline">
+						<h5 class="card-title">Студенческие группы</h5>
+						<div class="header-elements">
+							<div class="list-icons">
+		                		<a class="list-icons-item" data-action="collapse"></a>
+								{% block modal %}
+									{% include './modals/groupModal.html' %}
+								{% endblock modal %}
+		                	</div>
+	                	</div>
+					</div>
+					<table class="table datatable-basic">
+						<thead>
+							<tr>
+								<th>№</th>
+								<th>Имя</th>
+								<th>Владелец</th>
+								<th>Описание</th>
+								<th>Дата создания</th>
+								<th>Count</th>
+								
+							</tr>
+						</thead>
+						<tbody>
+							{% for i in groups %}
+								<tr>
+									<td>{{ forloop.counter }}</td>
+									<td><a href="{% url 'students' i.pk %}">{{ i.name }}</a></td>
+									<td>{{ i.owner.user.username }}</td>
+									<td>{{ i.description }}</td>
+									<td>{{ i.created_at }}</td>
+									<td>
+									{{ i.student.count }}
+									</td>
+								</tr>
+							{% endfor %}
+							</tbody>
+					</table>
+				</div>
+				<!-- /basic datatable -->
+
+			</div>
+			<!-- /content area -->
+			{% block js %}
+			{% include './modals/groupModaljs.js' %}
+			{% endblock js %}
+	{% endif %}
+{% endblock content%}
+
+
+

@@ -1,0 +1,225 @@
+{% extends '../../base.html' %}
+
+
+{% block content %}
+{% if request.user.teacher %}
+<div class="content">
+    <div id='calendar'></div>
+
+	            <!-- Disabled animation -->
+				<div id="modal_animation" class="modal fade" tabindex="-1">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="modal-title">Lesson</h5>
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+							</div>
+                            <form method="post" id="post-form" enctype="multipart/form-data">{% csrf_token %}
+                                <div class="card-body" id="forms-target-left">
+                                    <div class="form-group">
+                                        <label>Заглавие</label>
+                                        <input type="text" class="form-control" name="name" id="title" placeholder="Введите Название">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Группа</label>
+                                        <select class="form-control form-control-sm" id="group_select">
+                                            <option select>Выбирайте группу</option>
+                                            {% for el in groups %}
+                                                <option value={{ el.id }}>{{ el.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" id="submit">Добавить</button>
+                                    </div>
+                                </div>
+                            </form>
+						</div>
+					</div>
+				</div>
+				<!-- /disabled animation -->
+	            <!-- Horizontal form modal -->
+				<div id="modal_form_horizontal" class="modal fade" tabindex="-1">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" >Конференция zoom</h5>
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+							</div>
+
+							<form action="#" class="form-horizontal">
+								<div class="modal-body">
+									<div class="form-group row">
+										<label class="col-form-label col-sm-3">Имя учителя</label>
+										<div class="col-sm-9">
+											<input type="text" readonly="readonly" id="teacher"  class="form-control">
+										</div>
+									</div>
+
+									<div class="form-group row">
+										<label class="col-form-label col-sm-3">Должность</label>
+										<div class="col-sm-9">
+											<input type="text" readonly="readonly" id="position"  class="form-control">
+										</div>
+									</div>
+
+                                    <div class="form-group row">
+										<label class="col-form-label col-sm-3">Заглавие</label>
+										<div class="col-sm-9">
+											<input type="text" readonly="readonly" id="titleBody"  class="form-control">
+										</div>
+									</div>
+                                    <div class="form-group row">
+										<label class="col-form-label col-sm-3">Группа</label>
+										<div class="col-sm-9">
+											<input type="text" readonly="readonly" id="groupsBody"  class="form-control">
+										</div>
+									</div>
+
+									<div class="form-group row">
+										<label class="col-form-label col-sm-3">Урок zoom URL-адреса</label>
+										<div class="col-sm-9">
+											<a href="" id="zoom_url" class="modal-title"  target="_blank"></a>
+										</div>
+									</div>
+
+									<div class="form-group">
+                                        <label>Начинает:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-calendar22"></i></span>
+                                            </span>
+                                            <input type="text" readonly="readonly" class="form-control" id="time"> 
+                                        </div>
+								    </div>
+								</div>
+
+							</form>
+						</div>
+					</div>
+				</div>
+				<!-- /horizontal form modal -->
+<script>
+
+    function loadCalendar() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'ru',
+            selectable: true,
+            selectHelper: true,
+            plugins: ['interaction', 'dayGrid'],
+            firstDay : 1,
+            eventLimit: true,
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            select: function(start, end){
+                $('#modal_animation').modal();
+                $('#submit').on('click', function(){
+                    var title = $('#title').val()
+                    if (title){
+                        var start_date = start.start.toISOString();
+                        var end_date = start.end.toISOString();
+                        var group_select = $('#group_select').val()
+                        $.ajax({
+                            type:"POST",
+                            url: "/api/v1/lesson/create/lesson/",
+                            data:{
+                                "title":title,
+                                "start_date":start_date,
+                                "end_date": end_date,
+                                "groups":group_select,
+                                csrfmiddlewaretoken: csrftoken
+                            },
+
+                            dataType: "json",
+                            beforeSend: function (xhr) {
+                                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                            },
+                            success: function(data){
+                                calendar.addEvent({
+                                    title:title,
+                                    start: start_date,
+                                    end:end_date,
+                                    groups:group_select,
+                                })
+                                window.location = '/lesson/teacher/calendar'
+                            },
+                            error: function(data){
+                                if (data['responseJSON']['error']){
+                                    new PNotify({
+                                        title: 'Предупреждающее уведомление',
+                                        text: 'Выберите дату сегодняшнюю или в будущем',
+                                        addclass: 'bg-danger border-danger'
+                                    });
+
+                                }else{
+                                    new PNotify({
+                                        title: 'Предупреждающее уведомление',
+                                        text: 'Выберите Группу',
+                                        addclass: 'bg-danger border-danger'
+                                    });
+                                }
+                            }
+                        })
+                    }
+                })
+            },
+            events: function(info, successCallback){
+                var start_date = info.start.toISOString();
+                var end_date = info.end.toISOString();
+                $.ajax({
+                type: "GET",
+                url: "/api/v1/lesson/list/lesson/teacher/",
+                dataType: "json",
+                data: {
+                    'start_date':start_date,
+                    'end_date':end_date,
+                    csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val()
+                },
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data){
+                    container = []
+                    if (data){
+                    for (let i = 0; i < data.length; i++) {
+                    var title = data[i].title
+                    var start_date = data[i].start_date
+                    var end_date = data[i].end_date
+                    var teacher = data[i].teacher.user.first_name
+                    var position = data[i].teacher.position
+                    var zoom_url = data[i].zoom_join_url
+                    var group = data[i].groups.name
+                    container.push({title:title, start:start_date, end:end_date, teacher:teacher, position:position,zoom_url:zoom_url, group:group })
+                    }
+                    };
+                    successCallback(
+                    container
+                    )
+                }
+                });
+            },
+            eventClick: function(event) {
+                $('#modal_form_horizontal').modal();
+                $('#titleBody').val(event.event._def.title);
+                $('#teacher').val(event.event.extendedProps.teacher);
+                $('#time').val(moment(event.event.end).locale('uz').format('lll'))
+                $('#position').val(event.event.extendedProps.position);
+                $('#zoom_url').html(event.event.extendedProps.zoom_url)[0].href = event.event.extendedProps.zoom_url
+                $('#groupsBody').val(event.event.extendedProps.group)
+            },
+
+        });
+        calendar.render();
+    };
+
+    if (document.readyState !== 'complete') {
+            document.addEventListener('DOMContentLoaded', loadCalendar);
+    } else {
+            loadCalendar();
+    }
+</script>
+</div>
+{% endif %}
+{% endblock %}

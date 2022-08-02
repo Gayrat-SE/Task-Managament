@@ -1,0 +1,173 @@
+{% extends '../../base.html' %}
+
+{% block content %}
+{% if request.user.teacher %}
+<div class="content">
+    <form method="post" id="myform">
+        <div class="card">
+            <div class="card-header">
+                <h2>Вопросы</h2>
+            </div>
+            <table class="table datatable-basic table-hover">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Название Задачи</th>
+                        <th>Предмет</th>
+                        <th>Время Создания Задачи</th>
+                        <th>Срок</th>
+                        <th>Файл Задачи</th>
+                    </tr>
+                </thead>
+                <div class="card-body">
+                    <tbody>
+                    {% for el in Homework %}
+                        <tr type="button" data-id="{{ el.id }}" id="overlay"  data-toggle="modal" data-target="#modal_full" >
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ el.homework_title }}</td>
+                            <td>{{ request.user.teacher.position }}</td>
+                            <td>{{ el.homework_created_time }}</td>
+                            <td>{{ el.homework_deadline_time }}</td>
+                            <td><a href="{{ el.homework_file.url }}">Homework File</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </div>
+            </table>
+        </div>
+    </div>
+    <!-- Full width modal -->
+    <div id="modal_full" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-full">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Hover rows -->
+                    <div class="alert alert-danger alert-styled-left alert-dismissible col-3" id="danger" style="display: None;">
+                        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                        <span class="font-weight-semibold" id="text">Oh snap!</span>
+                    </div>
+                    <div class="card">
+                        <div class="card-header header-elements-inline">
+                            <h5 class="card-title">Ответы</h5>
+                            <div class="header-elements">
+                                <div class="list-icons">
+                                    <a class="list-icons-item" data-action="collapse"></a>
+                                </div>
+                            </div>
+                        </div>
+                        <table id="example" class="table datatable-basic table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Имя</th>
+                                    <th>Фамилия</th>
+                                    <th>Время Создания Ответа</th>
+                                    <th>Файл Ответов</th>
+                                    <th>Действия</th>
+                                    <th>Оценка</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <!-- /hover rows -->
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link" data-dismiss="modal">Close</button>
+                    <button type="button" id="submit"  class="btn bg-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+    <!-- /full width modal -->
+    <script>
+        
+        let objects = document.querySelectorAll('#overlay')
+        for (let item of objects){
+		   item.addEventListener('click', function() {
+			   get_submissions(item.dataset.id)
+		   })
+	   }
+       var editor;
+       function get_submissions(homework_id){
+                $(document).ready(function () {
+                    var mytable = $('#example').DataTable({
+                        "ordering": false,
+                        "bDestroy": true,
+                        select: {
+                            style:    'multi',
+                            selector: 'td:first-child'
+                        },
+                        order: [[1, 'asc']],
+                        
+                        "language": {
+                            "emptyTable": "Нет никакого ответа",
+                            "infoEmpty": "Отображение от 0 до 0 из 0 записей",
+                            "search": "Поиск:   ",
+                            "info": "Отображение от _START_ до _END_ из _TOTAL_ записей",
+                            select: {
+                                        rows: "%d выбранные строки"
+                                    }
+                        },
+                        ajax: {
+                            url: '/api/v1/course/submissions/list/' + homework_id + '/',
+                            dataSrc: '',
+                        }, 
+                        columnDefs:[{
+                            className: 'select-checkbox',
+                            targets:   0,
+                            orderable: false
+                        }],
+                        columns: [
+                            {data: 'id', render: function(id){ return '<input type="checkbox" id="' + id + '" style="display: None;" >'}},
+                            {data: 'student.user.first_name'},
+                            {data: 'student.user.last_name'},
+                            {data: 'upload_homework_time', render: function(date){ return moment(date).locale('uz').format('lll') }},
+                            {data: 'submission_homework_file', render: function (file) { return '<a href="' + file + '" target="_blank">Download File</a>'; }},
+                            {data: 'is_answered'},
+                            {
+                                data: 'submission_rating',  render: function(mark){ return '<input class="rating" type="number" min="0" max="5" style="width:50px;" value="' + mark + '" >'}
+                            },
+                        ],
+                    });
+                    // Handle form submission event
+                    $('#submit').on('click', function(e){
+                        for (var i=0; i < mytable.$('tr.selected').length; i++){
+                            var submission_rating = mytable.$('tr.selected')[i].children[6].lastElementChild.value
+                            var id = mytable.$('tr.selected')[i].children[0].children[0].id
+                            console.log(id)
+                            $.ajax({
+                                type: 'POST',
+                                url: '/api/v1/course/rating/create/',
+                                data:JSON.stringify( {
+                                    id:id,
+                                    submission_rating:submission_rating,
+                                    csrfmiddlewaretoken: csrftoken
+                                }),
+                                contentType: "application/json; charset=utf-8",
+                                dataType: "json",
+                                beforeSend: function (xhr) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                                },
+                                success: function(data){
+                                    window.location = '/course/detail/students/{{ group.id }}';
+                                },
+                                error: function(data){
+                                    console.log(data)
+                                }
+                            })
+                        }
+                        });
+                });
+       }
+    </script>
+    <script>
+        
+    </script>
+{% endif %}
+{% endblock content %}

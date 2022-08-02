@@ -1,0 +1,75 @@
+<!-- Button trigger modal -->
+{% if request.user.owner %}
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+    Добавить Ученика
+</button>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Регистрация студентов</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="" method="post">
+                    <div class="form-group">
+                        <label>Имя пользователя</label>
+                        <input type="text" class="form-control" name="username" id="username" placeholder="Введите имя пользователя">
+                    </div>
+                    <div class="form-group">
+                        <label>Имя</label>
+                        <input type="text" class="form-control" name="fist-name" id="first-name" placeholder="Введите Имя">
+                    </div>
+                    <div class="form-group">
+                        <label>Фамилия</label>
+                        <input type="text" class="form-control" name="last-name" id="last-name" placeholder="Введите Фамилию">
+                    </div>
+                    <div class="form-group">
+                        <label>Отчество</label>
+                        <input type="text" class="form-control" name="last-name" id="father_name" placeholder="Введите Отчество">
+                    </div>
+                    <div class="form-group">
+                        <label>День рождения</label>
+                        <input class="form-control birthday" type="date" id="date" name="date">
+                    </div>
+                    <div class="form-group">
+						<label>Пол</label>
+						<select class="form-control form-control-sm" id="gender" aria-label="Default select example">
+							<option selected>Выберите Пол</option>
+							<option value="Male">Мужской</option>
+							<option value="Female" >Женский</option>
+						</select>
+					</div>
+                    <div class="form-group">
+                        <label>Группа</label>
+                        <select disabled class="form-control form-control-sm" aria-label="Default select example">
+                            {% for el in student %}
+                                <option selected id="group_select" value={{ el.id }}>{{ el.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" name="email" id="email" placeholder="Введите Email">
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон</label>
+                        <input type="text" class="form-control" name="phone" id="phone" placeholder="Введите Телефон">
+                    </div>
+                    <div class="form-group">
+                        <label>Пароль</label>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Введите Пароль">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn btn-primary" id="submit">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+
+
+
+
+{% block content %}
+<div class="content">
+    <div class="timeline-row">
+										<div class="timeline-icon">
+											<div class="bg-info-400">
+												<i class="icon-comment-discussion"></i>
+											</div>
+										</div>
+
+										<div class="card">
+											<div class="card-header header-elements-inline">
+												<h6 class="card-title">{{ student.name }}</h6>
+												<div class="header-elements">
+													<div class="list-icons ml-3">
+														<div class="dropdown">
+															<a href="#" class="list-icons-item caret-0 dropdown-toggle" data-toggle="dropdown">
+																<i class="icon-arrow-down12"></i>
+															</a>
+														</div>
+								                	</div>
+							                	</div>
+											</div>
+
+											<div class="card-body">
+												<div class="media-list media-chat media-chat-scrollable mb-3 messages" id="chat-messages">
+                                                    {% for me in messages %}
+                                                    {% if me.student == request.user.student %}
+													<li class="media media-chat-item-reverse">
+														<div class="chat-messages media-body">
+															<div class="media-chat-item chat-messages-me"><b>{{ me.content }}</b></div>
+                                                            <div class="font-size-sm text-muted mt-2">{{ me.date_added }}</div>
+														</div>
+                                                        <div class="ml-3">
+															<b>{{ me.student }}</b>
+														</div>
+													</li>
+                                                    {% else %}
+													<li class="media">
+                                                        <div class="mr-3">
+															<b>{{ me.student }}</b>
+														</div>
+														<div class="media-body">
+															<div class="media-chat-item"><b>{{ me.content }}</b></div>
+                                                            <div class="font-size-sm text-muted mt-2">{{ me.date_added }}</div>
+														</div>
+													</li>
+                                                    {% endif %}
+                                                    {% endfor %}
+												</div>
+
+						                    	<form method="post" action="" class="flex">
+                                                    {% csrf_token %}
+                                                    <input name="enter-message" class="form-control mb-3" rows="3" cols="1" placeholder="Enter your message..." id="chat-message-input"></input>
+                                                    <div class="d-flex align-items-center">
+                                                        <button type="button" class="btn bg-teal-400 btn-labeled btn-labeled-right ml-auto" id="chat-message-submit"><b><i class="icon-paperplane"></i></b> Send</button>
+                                                    </div>
+                                                </form>
+											</div>
+										</div>
+									</div>
+</div>
+
+{{ student.id|json_script:"json-roomname" }}
+{{ request.user.username|json_script:"json-username" }}
+
+<script>
+    const roomName = JSON.parse(document.getElementById('json-roomname').textContent);
+    const userName = JSON.parse(document.getElementById('json-username').textContent);
+    const sentBtn = document.getElementById('chat-message-input');
+    const chatSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/chat/'
+        + roomName
+        + '/'
+    );
+
+    chatSocket.onclose = function(e) {
+        console.log('onclose')
+    }
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.message) {
+            if (data.username==userName){
+                document.querySelector('#chat-messages').innerHTML +=
+                                                    ('<li class="media media-chat-item-reverse">' +
+														'<div class="chat-messages media-body">' +
+															'<div class="media-chat-item chat-messages-me"><b>' +  data.message + '</b></div>' +
+                                                            '<div class="font-size-sm text-muted mt-2">' + moment(data.date).format('lll') + '</div>' +                                                            
+                                                        '</div>' + '<div class="ml-3">' +
+															'<b>' + data.username  + '</b>' +
+														'</div>' +
+													'</li>');
+            }else{
+                document.querySelector('#chat-messages').innerHTML += 
+                                                    ('<li class="media">' +
+                                                        '</div>' + '<div class="mr-3">' +
+															'<b>' + data.username  + '</b>' +
+														'</div>' +
+														'<div class="media-body">' +
+															'<div class="media-chat-item"><b>' + data.message + '</b></div>' +
+                                                            '<div class="font-size-sm text-muted mt-2">' + moment(data.date).format('lll') + '</div>' +
+													'</div></li>');
+            }
+        } else {
+            alert('The message was empty!')
+        }
+        scrollToBottom();
+
+    };
+
+    document.querySelector('#chat-message-input').focus();
+    document.querySelector('#chat-message-input').onkeyup = function(e) {
+        if (e.keyCode === 13) {
+            document.querySelector('#chat-message-submit').click();
+        }
+    };
+
+    document.querySelector('#chat-message-submit').onclick = function(e) {
+        e.preventDefault()
+        const messageInputDom = document.querySelector('#chat-message-input');
+        const message = messageInputDom.value;
+        if (message.length == 0){
+            console.log("error")
+        }else{
+            $.ajax({
+                type: "POST",
+                url: "/api/v1/chat/create/",
+                data:{
+                    "group":roomName,
+                    "content": message,
+                },
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data){
+                    chatSocket.send(JSON.stringify({
+                        'message': message,
+                        'username': userName,
+                        'room':roomName,
+                        'date':data.date_added
+                    }));
+                    console.log(sentBtn.value)
+                    messageInputDom.value = '';
+                    sentBtn.value = '';
+                }
+            })
+        }
+
+        return false
+    };
+
+    /**
+    * A function for finding the messages element, and scroll to the bottom of it.
+    */
+    function scrollToBottom() {
+        let objDiv = document.getElementById("chat-messages");
+        objDiv.scrollTop = objDiv.scrollHeight;
+    }
+
+    // Add this below the function to trigger the scroll on load.
+    scrollToBottom();
+</script>
+<script>
+    $('#chat-message-input').emojioneArea({
+        pickerPosition:'bottom',
+    });
+</script>
+
+
+{% endblock %}

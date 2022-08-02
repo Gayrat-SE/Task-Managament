@@ -1,0 +1,116 @@
+{% extends '../base.html' %}
+{% block content %}
+{% if request.user.teacher %}
+    <div class="content">
+        <div class="card p-2 d-inline-block" style="width: 800px;">
+            <form method="post" enctype="multipart/form-data">{% csrf_token %}
+                <div class="card-header">
+                    <h3>Задание Для Студентов</h3>
+                </div>
+                <div class="form-group">
+                    <label>Заглавие</label>
+                    <input type="text" class="form-control" name="name" id="name" placeholder="Введите Название">
+                </div>
+                <div class="form group">
+                    <label>Описание</label>
+                    <input type="text" class="form-control" name="Description" id="description" placeholder="Введите описание">
+                </div>
+                <div class="form-group ">
+                    <label>Прикрепить Файл:</label>
+                    <input type="file" class="form-input-styled" id="file" data-fouc>
+                </div>
+                <div class="form-group">
+                    <label>Срок:</label>
+                    <div class="input-group">
+                        <span class="input-group-prepend">
+                            <span class="input-group-text"><i class="icon-calendar22"></i></span>
+                        </span>
+                        <input id="datetime" type="datetime-local" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label>Выберите группы</label>
+                        <select class="form-control" id="groups" >
+                            <option value="Выберите Группу">Выберите Группу</option>
+                            {% for groups in list_groups %}
+                            <option value="{{ groups.id }}">{{ groups.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Выберите учиника</label>
+                    <div class="col-lg-10">
+                        <select class="form-control" id="students" multiple="multiple">
+                            {% for groups in list_groups %}
+                                {% for students in groups.student.all %}
+                                    <option id="{{ groups.id }}" selected value="{{ students.id }}">{{ students }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-danger border-0 alert-dismissible" id="error" style="display: None;">
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                    <span class="font-weight-semibold">Oh snap!</span> Error Time
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-primary" id="submit">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+   $(document).ready(function()
+   {
+    $groups=$('#groups'),
+    $students=$('#students'),
+    $options=$students.find('option');
+    $groups.on('change', function()
+    {
+        $students.html($options.filter('[id="'+this.value+'"]'));
+    }).trigger('change');
+   });
+    </script>
+    <script>
+        $('#submit').on('click', function(){
+            let input = document.getElementById('file');
+            let crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+            let homework_title = $('#name').val();
+            let homework_text = $('#description').val();
+            let group = $('#groups').val()
+            let datetime = $('#datetime').val()
+            let students = $('#students').val()
+            let data = new FormData();
+            for (var i=0; i < students.length; i++){
+                data.append('student', students[i])
+            }
+            data.append('homework_file', input.files[0]);
+            data.append('homework_title', homework_title);
+            data.append('homework_text', homework_text);
+            data.append('csrfmiddlewaretoken', crf_token);
+            data.append('homework_deadline_time', datetime);
+            data.append('student_group', group)
+            
+            fetch('/api/v1/course/homework/create/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body:data,
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                if (data['homework_deadline_time'][0] == 'Error Time'){
+                    document.getElementById('error').style.display = 'block'
+                }else{
+                    window.location = '/course/homework/create';
+                    
+                }
+		    }
+        )}
+        );
+    </script>
+    {% endif %}
+{% endblock content %}
+

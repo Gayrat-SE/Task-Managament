@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if request.user.student %}
+    <div class="content">
+    <div class="d-flex flex-wrap">
+            <div class="row">
+        {% for el in homeworks %}
+        <div class="card m-2 d-flex" style="width:400px">
+            <div class="card-header">
+                <h3>{{ el.teacher.position }}</h3>
+                <span class="d-block h5">
+                    {{ el.homework_text }}
+                </span>
+                <a href="{{ el.homework_file.url }}" download class="h5">Скачивать файл</a>
+                <p class="h4 mt-2">Срок: <time>{{ el.homework_deadline_time }}</time> </p>
+            </div>
+            <div class="card-body">
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-primary" id="overlay"  data-toggle="modal"  data-id="{{ el.id }}" data-target="#exampleModal">
+                Загрузить файл
+                </button>
+
+                <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Загрузить файл</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" id="post-form" enctype="multipart/form-data">{% csrf_token %}
+                                <div class="card">
+    
+                                    <div class="card-body" id="forms-target-left">
+                                        <div class="form-group">
+                                            <label class="cursor-move">Прикрепить файл:</label>
+                                            <input type="file" id="file" name="file" class="form-input-styled" data-fouc>
+                                        </div>
+    
+                                        <div class="form-group">
+                                            <label class="cursor-move">Ваш Коммит:</label>
+                                            <textarea rows="5" cols="5" class="form-control" placeholder="Введите сообщение"></textarea>
+                                        </div>
+    
+                                        <div class="modal-footer">
+											<button type="button" class="btn btn-primary" id="submit">Добавить файл</button>
+										</div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    </div>
+    </div>
+    <script>
+        let objects = document.querySelectorAll('#overlay')
+        for (let item of objects){
+		   item.addEventListener('click', function() {
+			   get_img(item.dataset.id)
+		   })
+	   }
+       function get_img(homework) {
+        $('#submit').on('click', function(){
+            let input = document.getElementById('file');
+            var crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+            let data = new FormData();
+            data.append('submission_homework_file', input.files[0]);
+            data.append('homework', homework)
+            data.append('csrfmiddlewaretoken', crf_token)
+            fetch('/api/v1/course/homework/answer/', {
+                method: 'POST',
+                body: data,
+                headers: {
+                'Authorization': csrftoken
+                    },
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                window.location = '/course/homework/{{ group_id.id }}';
+                
+		},
+        )}
+        )}
+    </script>
+{% endif %}
+{% endblock content %}
+
+
